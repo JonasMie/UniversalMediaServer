@@ -886,7 +886,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 			// 2) transcoding is preferred and not prevented by configuration
 			if (forceTranscode || (preferTranscode && !isSkipTranscode())) {
 				if (parserV2) {
-					LOGGER.trace("Final verdict: \"{}\" will be transcoded with player \"{}\" with mime type \"{}\"", getName(), player.toString(), renderer != null ? renderer.getMimeType(mimeType(player)) : media.getMimeType());
+					LOGGER.trace("Final verdict: \"{}\" will be transcoded with player \"{}\" with mime type \"{}\"", getName(), player.toString(), renderer != null ? renderer.getMimeType(mimeType(player), media) : media.getMimeType());
 				} else {
 					LOGGER.trace("Final verdict: \"{}\" will be transcoded with player \"{}\"", getName(), player.toString());
 				}
@@ -1518,7 +1518,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 		) {
 			if (configuration.isPrettifyFilenames() && getFormat() != null && getFormat().isVideo()) {
 				RealFile rf = (RealFile) this;
-				displayName = FileUtil.getFileNameWithRewriting(displayName, rf.getFile());
+				displayName = FileUtil.getFileNamePrettified(displayName, rf.getFile());
 			} else {
 				displayName = FileUtil.getFileNameWithoutExtension(displayName);
 			}
@@ -2223,7 +2223,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 		// is determined for the default renderer. This renderer may rewrite the
 		// mime type based on its configuration. Looking up that mime type is
 		// not guaranteed to return a match for another renderer.
-		String mime = mediaRenderer.getMimeType(mimeType());
+		String mime = mediaRenderer.getMimeType(mimeType(), media);
 
 		// Use our best guess if we have no valid mime type
 		if (mime == null || mime.contains("/transcode")) {
@@ -2369,7 +2369,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 				String tempString = "http-get:*:" + getRendererMimeType(mediaRenderer) + ":" + (dlnaOrgPnFlags != null ? (dlnaOrgPnFlags + ";") : "") + getDlnaOrgOpFlags(mediaRenderer);
 				wireshark.append(" ").append(tempString);
 				addAttribute(sb, "protocolInfo", tempString);
-				if (subsAreValidForStreaming && !mediaRenderer.useClosedCaption()) {
+				if (subsAreValidForStreaming && mediaRenderer.offerSubtitlesByProtocolInfo() && !mediaRenderer.useClosedCaption()) {
 					addAttribute(sb, "pv:subtitleFileType", media_subtitle.getType().getExtension().toUpperCase());
 					wireshark.append(" pv:subtitleFileType=").append(media_subtitle.getType().getExtension().toUpperCase());
 					addAttribute(sb, "pv:subtitleFileUri", getSubsURL(media_subtitle));
@@ -2523,7 +2523,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 				sb.append(subsURL);
 				closeTag(sb, "sec:CaptionInfoEx");
 				LOGGER.trace("Network debugger: sec:CaptionInfoEx: sec:type=srt " + subsURL);
-			} else {
+			} else if (mediaRenderer.offerSubtitlesAsResource()){
 				openTag(sb, "res");
 				String format = media_subtitle.getType().getExtension();
 				if (StringUtils.isBlank(format)) {
@@ -2850,7 +2850,6 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 	 * @return The inputstream
 	 * @throws IOException
 	 */
-
 	public synchronized InputStream getInputStream(Range range, RendererConfiguration mediarenderer) throws IOException {
 		// Use device-specific pms conf, if any
 		PmsConfiguration configuration = PMS.getConfiguration(mediarenderer);

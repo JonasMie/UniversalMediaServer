@@ -58,7 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Container for all configurable PMS settings. Settings are typically defined by three things:
+ * Container for all configurable UMS settings. Settings are typically defined by three things:
  * a unique key for use in the configuration file "UMS.conf", a getter (and setter) method and
  * a default value. When a key cannot be found in the current configuration, the getter will
  * return a default value. Setters only store a value, they do not permanently save it to
@@ -260,6 +260,7 @@ public class PmsConfiguration extends RendererConfiguration {
 	protected static final String KEY_SHOW_APERTURE_LIBRARY = "show_aperture_library";
 	protected static final String KEY_SHOW_IPHOTO_LIBRARY = "show_iphoto_library";
 	protected static final String KEY_SHOW_ITUNES_LIBRARY = "show_itunes_library";
+	protected static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
 	protected static final String KEY_SINGLE = "single_instance";
 	protected static final String KEY_SKIP_LOOP_FILTER_ENABLED = "mencoder_skip_loop_filter";
 	protected static final String KEY_SKIP_NETWORK_INTERFACES = "skip_network_interfaces";
@@ -848,7 +849,16 @@ public class PmsConfiguration extends RendererConfiguration {
 	}
 
 	/**
-	 * Get the {@link java.util.Locale} of the preferred language for the UMS
+	 * Gets the language {@link String} as stored in the {@link PmsConfiguration}.
+	 * May return <code>null</code>.
+	 * @return The language {@link String}
+	 */
+	public String getLanguageRawString() {
+		return configuration.getString(KEY_LANGUAGE);
+	}
+
+	/**
+	 * Gets the {@link java.util.Locale} of the preferred language for the UMS
 	 * user interface. The default is based on the default (OS) locale.
 	 * @param log determines if any issues should be logged.
 	 * @return The {@link java.util.Locale}.
@@ -879,7 +889,7 @@ public class PmsConfiguration extends RendererConfiguration {
 	}
 
 	/**
-	 * Get the {@link java.util.Locale} of the preferred language for the UMS
+	 * Gets the {@link java.util.Locale} of the preferred language for the UMS
 	 * user interface. The default is based on the default (OS) locale. Doesn't
 	 * log potential issues.
 	 * @return The {@link java.util.Locale}.
@@ -889,7 +899,7 @@ public class PmsConfiguration extends RendererConfiguration {
 	}
 
 	/**
-	 * Get the {@link java.util.Locale} compatible tag of the preferred
+	 * Gets the {@link java.util.Locale} compatible tag of the preferred
 	 * language for the UMS user interface. The default is based on the default (OS) locale.
 	 * @return The <a href="https://en.wikipedia.org/wiki/IETF_language_tag">IEFT BCP 47</a> language tag.
 	 */
@@ -906,13 +916,13 @@ public class PmsConfiguration extends RendererConfiguration {
 	}
 
 	/**
-	 * Set the preferred language for the UMS user interface.
+	 * Sets the preferred language for the UMS user interface.
 	 * @param value The {@link java.net.Locale}.
 	 */
 	public void setLanguage(Locale locale) {
 		if (locale != null) {
 			if (Languages.isValid(locale)) {
-				configuration.setProperty(KEY_LANGUAGE, Languages.toLanguageCode(locale));
+				configuration.setProperty(KEY_LANGUAGE, Languages.toLanguageTag(locale));
 				PMS.setLocale(Languages.toLocale(locale));
 				//TODO: The line below should be removed once all calls to Locale.getDefault() is replaced with PMS.getLocale()
 				Locale.setDefault(Languages.toLocale(locale));
@@ -920,12 +930,12 @@ public class PmsConfiguration extends RendererConfiguration {
 				LOGGER.error("setLanguage() aborted because of unsupported language tag \"{}\"", locale.toLanguageTag());
 			}
 		} else {
-			LOGGER.error("setLanguage() aborted because the locale is null");
+			configuration.setProperty(KEY_LANGUAGE, "");
 		}
 	}
 
 	/**
-	 * Set the preferred language for the UMS user interface.
+	 * Sets the preferred language for the UMS user interface.
 	 * @param value The <a href="https://en.wikipedia.org/wiki/IETF_language_tag">IEFT BCP 47</a> language tag.
 	 */
 	public void setLanguage(String value) {
@@ -3442,11 +3452,11 @@ public class PmsConfiguration extends RendererConfiguration {
 		configuration.setProperty(KEY_APPEND_PROFILE_NAME, value);
 	}
 
-	public String getDepth3D() {
-		return getString(KEY_3D_SUBTITLES_DEPTH, "0");
+	public int getDepth3D() {
+		return getInt(KEY_3D_SUBTITLES_DEPTH, 0);
 	}
 
-	public void setDepth3D(String value) {
+	public void setDepth3D(int value) {
 		configuration.setProperty(KEY_3D_SUBTITLES_DEPTH, value);
 	}
 
@@ -3787,4 +3797,13 @@ public class PmsConfiguration extends RendererConfiguration {
 	public int getWindowExtendedState() {
 		return getInt(KEY_WINDOW_EXTENDED_STATE, Frame.NORMAL);
 	}
+
+	public boolean isShowSplashScreen() {
+		return getBoolean(KEY_SHOW_SPLASH_SCREEN, false);
+	}
+
+	public void setShowSplashScreen(boolean value) {
+		configuration.setProperty(KEY_SHOW_SPLASH_SCREEN, value);
+	}
+
 }
